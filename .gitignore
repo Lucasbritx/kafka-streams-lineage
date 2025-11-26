@@ -1,0 +1,53 @@
+# sbt specific
+.cache
+.history
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+.classpath
+.project
+.settings/
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VSCode
+.vscode/
+.metals/
+.bloop/
+metals.sbt
+
+# Mac
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Assembly/Build artifacts
+*.jar
+!project/*.jar
+
+# Kafka Streams state
+/tmp/
+kafka-streams-lineage-*
+
+# Docker volumes
+.docker/
