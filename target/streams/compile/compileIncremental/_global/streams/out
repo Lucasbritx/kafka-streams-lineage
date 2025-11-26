@@ -1,0 +1,6 @@
+[0m[[0m[0mdebug[0m] [0m[0m[zinc] IncrementalCompile -----------[0m
+[0m[[0m[0mdebug[0m] [0m[0mIncrementalCompile.incrementalCompile[0m
+[0m[[0m[0mdebug[0m] [0m[0mprevious = Stamps for: 35 products, 6 sources, 10 libraries[0m
+[0m[[0m[0mdebug[0m] [0m[0mcurrent source = Set(${BASE}/src/main/scala/com/lineage/kafka/producer/SampleDataProducer.scala, ${BASE}/src/main/scala/com/lineage/kafka/consumer/LineageEventConsumer.scala, ${BASE}/src/main/scala/com/lineage/kafka/model/DataModels.scala, ${BASE}/src/main/scala/com/lineage/kafka/processor/LineageTrackingProcessor.scala, ${BASE}/src/main/scala/com/lineage/kafka/serialization/JsonSerdes.scala, ${BASE}/src/main/scala/com/lineage/kafka/LineageTrackingApp.scala)[0m
+[0m[[0m[0mdebug[0m] [0m[0m> initialChanges = InitialChanges(Changes(added = Set(), removed = Set(), changed = Set(), unmodified = ...),Set(),Set(),API Changes: Set())[0m
+[0m[[0m[0mdebug[0m] [0m[0mNo changes[0m
