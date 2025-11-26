@@ -8,6 +8,8 @@ val kafkaVersion = "3.6.0"
 val logbackVersion = "1.4.11"
 val scalaLoggingVersion = "3.9.5"
 val circeVersion = "0.14.6"
+val openLineageVersion = "0.22.0"
+val marquezVersion = "0.25.0"
 
 libraryDependencies ++= Seq(
   // Kafka Streams
@@ -17,6 +19,14 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
+  
+  // OpenLineage
+  "io.openlineage" % "openlineage-java" % openLineageVersion,
+  
+  // HTTP client for API calls
+  "org.apache.httpcomponents" % "httpclient" % "4.5.14",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.2",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2",
   
   // Logging
   "ch.qos.logback" % "logback-classic" % logbackVersion,

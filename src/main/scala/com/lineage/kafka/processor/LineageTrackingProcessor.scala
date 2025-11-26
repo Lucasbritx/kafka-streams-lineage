@@ -45,7 +45,7 @@ class LineageTrackingProcessor extends AbstractProcessor[String, DataEvent] {
       originalEventId = dataEvent.eventId,
       processedPayload = processedPayload,
       processingTimestamp = processingTimestamp,
-      lineageInfo = lineageEvent
+      lineageRunId = Some(lineageEvent.eventId)
     )
     
     // Forward processed event to ProcessedSink

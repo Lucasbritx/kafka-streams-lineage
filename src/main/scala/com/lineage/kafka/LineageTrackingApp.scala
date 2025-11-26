@@ -1,8 +1,9 @@
 package com.lineage.kafka
 
 import com.lineage.kafka.model.DataEvent
-import com.lineage.kafka.processor.LineageTrackingProcessor
-import com.lineage.kafka.serialization.{DataEventSerde, LineageEventSerde, ProcessedEventSerde}
+import com.lineage.kafka.processor.OpenLineageTrackingProcessor
+import com.lineage.kafka.serialization.{DataEventSerde, ProcessedEventSerde}
+import com.lineage.kafka.openlineage.SimpleOpenLineageClient
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig, Topology}
 import org.apache.kafka.streams.state.{KeyValueStore, Stores}
 import org.apache.kafka.streams.processor.ProcessorSupplier
@@ -14,6 +15,9 @@ import scala.jdk.CollectionConverters._
 object LineageTrackingApp extends LazyLogging {
   
   def main(args: Array[String]): Unit = {
+    // Initialize Marquez datasets and jobs
+    initializeMarquez()
+    
     val topology = buildTopology()
     
     val props = new Properties()
@@ -43,11 +47,11 @@ object LineageTrackingApp extends LazyLogging {
   def buildTopology(): Topology = {
     val builder = new Topology()
     
-    // Add state store for lineage tracking
+    // Add state store for lineage tracking (now stores run IDs)
     val lineageStore = Stores.keyValueStoreBuilder(
       Stores.persistentKeyValueStore("lineage-store"),
       new org.apache.kafka.common.serialization.Serdes.StringSerde(),
-      new LineageEventSerde()
+      new org.apache.kafka.common.serialization.Serdes.StringSerde()
     )
     
     builder.addStateStore(lineageStore)
@@ -55,9 +59,9 @@ object LineageTrackingApp extends LazyLogging {
     // Add source processor
     builder.addSource("Source", "input-events")
     
-    // Add lineage tracking processor
+    // Add OpenLineage tracking processor
     val processorSupplier = new ProcessorSupplier[String, DataEvent] {
-      override def get() = new LineageTrackingProcessor()
+      override def get() = new OpenLineageTrackingProcessor()
     }
     builder.addProcessor("LineageProcessor", processorSupplier, "Source")
     
@@ -73,15 +77,16 @@ object LineageTrackingApp extends LazyLogging {
       "LineageProcessor"
     )
     
-    // Add sink for lineage events (optional)
-    builder.addSink(
-      "LineageSink",
-      "lineage-events",
-      new org.apache.kafka.common.serialization.Serdes.StringSerde().serializer(),
-      new LineageEventSerde().serializer(),
-      "LineageProcessor"
-    )
+    // Lineage events are now handled by OpenLineage, no need for separate sink
     
     builder
+  }
+  
+  private def initializeMarquez(): Unit = {
+    logger.info("Initializing Marquez datasets...")
+    
+    // Create datasets
+    SimpleOpenLineageClient.createDataset("input-events", "Input Kafka topic for data events")
+    SimpleOpenLineageClient.createDataset("processed-events", "Output Kafka topic for processed events")
   }
 }

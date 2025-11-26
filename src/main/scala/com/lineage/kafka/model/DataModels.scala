@@ -35,7 +35,7 @@ case class ProcessedEvent(
   originalEventId: String,
   processedPayload: Map[String, String],
   processingTimestamp: Instant,
-  lineageInfo: LineageEvent
+  lineageRunId: Option[String] = None
 )
 
 object ProcessedEvent {

@@ -42,7 +42,6 @@ object LineageEventConsumer extends LazyLogging {
   
   private def displayProcessedEvent(record: ConsumerRecord[String, ProcessedEvent]): Unit = {
     val event = record.value()
-    val lineage = event.lineageInfo
     
     logger.info("=" * 60)
     logger.info(s"PROCESSED EVENT: ${event.originalEventId}")
@@ -51,12 +50,13 @@ object LineageEventConsumer extends LazyLogging {
     logger.info(s"Processed Payload: ${event.processedPayload}")
     logger.info("-" * 30)
     logger.info(s"LINEAGE INFO:")
-    logger.info(s"  Lineage Event ID: ${lineage.eventId}")
-    logger.info(s"  Source Topic: ${lineage.sourceTopic}")
-    logger.info(s"  Target Topic: ${lineage.targetTopic}")
-    logger.info(s"  Transformation: ${lineage.transformationType}")
-    logger.info(s"  Processing Node: ${lineage.metadata.getOrElse("processing-node", "N/A")}")
-    logger.info(s"  Partition: ${lineage.metadata.getOrElse("partition", "N/A")}")
+    event.lineageRunId match {
+      case Some(runId) => 
+        logger.info(s"  OpenLineage Run ID: $runId")
+        logger.info(s"  Lineage tracked in Marquez: http://localhost:3000")
+      case None => 
+        logger.info(s"  No lineage information available")
+    }
     logger.info("=" * 60)
   }
 }

@@ -1,0 +1,9 @@
+# Marquez configuration
+marquez:
+  db:
+    url: jdbc:postgresql://postgres:5432/marquez
+    user: marquez
+    password: marquez
+  port: 5000
+  adminPort: 5001
+  namespace: kafka-streams
