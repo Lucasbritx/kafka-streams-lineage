@@ -1,7 +1,7 @@
 package com.lineage.kafka
 
 import com.lineage.kafka.model.DataEvent
-import com.lineage.kafka.processor.OpenLineageTrackingProcessor
+import com.lineage.kafka.processor.{OpenLineageTrackingProcessor, DatabaseLineageProcessor, FileSystemLineageProcessor, APILineageProcessor}
 import com.lineage.kafka.serialization.{DataEventSerde, ProcessedEventSerde}
 import com.lineage.kafka.openlineage.SimpleOpenLineageClient
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig, Topology}
@@ -47,7 +47,7 @@ object LineageTrackingApp extends LazyLogging {
   def buildTopology(): Topology = {
     val builder = new Topology()
     
-    // Add state store for lineage tracking (now stores run IDs)
+    // Add state store for lineage tracking (shared across all processors)
     val lineageStore = Stores.keyValueStoreBuilder(
       Stores.persistentKeyValueStore("lineage-store"),
       new org.apache.kafka.common.serialization.Serdes.StringSerde(),
@@ -56,37 +56,81 @@ object LineageTrackingApp extends LazyLogging {
     
     builder.addStateStore(lineageStore)
     
-    // Add source processor
-    builder.addSource("Source", "input-events")
+    // ==================== MULTIPLE SOURCES ====================
     
-    // Add OpenLineage tracking processor
-    val processorSupplier = new ProcessorSupplier[String, DataEvent] {
+    // SOURCE 1: Generic input events (original)
+    builder.addSource("GenericSource", "input-events")
+    
+    // SOURCE 2: Database events (from Debezium or JDBC Connector)
+    builder.addSource("DBSource", "db-events")
+    
+    // SOURCE 3: File system events (from File Source Connector)
+    builder.addSource("FileSource", "file-events")
+    
+    // SOURCE 4: API/Web Service events (from HTTP Source Connector)
+    builder.addSource("APISource", "api-events")
+    
+    // ==================== PROCESSORS ====================
+    
+    // Generic processor for input-events
+    val genericProcessor = new ProcessorSupplier[String, DataEvent] {
       override def get() = new OpenLineageTrackingProcessor()
     }
-    builder.addProcessor("LineageProcessor", processorSupplier, "Source")
+    builder.addProcessor("GenericProcessor", genericProcessor, "GenericSource")
     
-    // Connect the state store to the processor
-    builder.connectProcessorAndStateStores("LineageProcessor", "lineage-store")
+    // Database-specific processor
+    val dbProcessor = new ProcessorSupplier[String, DataEvent] {
+      override def get() = new DatabaseLineageProcessor()
+    }
+    builder.addProcessor("DBProcessor", dbProcessor, "DBSource")
     
-    // Add sink for processed events
+    // File system-specific processor
+    val fileProcessor = new ProcessorSupplier[String, DataEvent] {
+      override def get() = new FileSystemLineageProcessor()
+    }
+    builder.addProcessor("FileProcessor", fileProcessor, "FileSource")
+    
+    // API-specific processor
+    val apiProcessor = new ProcessorSupplier[String, DataEvent] {
+      override def get() = new APILineageProcessor()
+    }
+    builder.addProcessor("APIProcessor", apiProcessor, "APISource")
+    
+    // ==================== CONNECT STATE STORES ====================
+    
+    builder.connectProcessorAndStateStores("GenericProcessor", "lineage-store")
+    builder.connectProcessorAndStateStores("DBProcessor", "lineage-store")
+    builder.connectProcessorAndStateStores("FileProcessor", "lineage-store")
+    builder.connectProcessorAndStateStores("APIProcessor", "lineage-store")
+    
+    // ==================== SINK ====================
+    
+    // Single sink for all processed events (all sources converge here)
     builder.addSink(
       "ProcessedSink",
       "processed-events",
       new org.apache.kafka.common.serialization.Serdes.StringSerde().serializer(),
       new ProcessedEventSerde().serializer(),
-      "LineageProcessor"
+      "GenericProcessor", "DBProcessor", "FileProcessor", "APIProcessor"
     )
     
-    // Lineage events are now handled by OpenLineage, no need for separate sink
+    // Lineage events are handled by OpenLineage/Marquez
     
     builder
   }
   
   private def initializeMarquez(): Unit = {
-    logger.info("Initializing Marquez datasets...")
+    logger.info("Initializing Marquez datasets for multiple sources...")
     
-    // Create datasets
-    SimpleOpenLineageClient.createDataset("input-events", "Input Kafka topic for data events")
-    SimpleOpenLineageClient.createDataset("processed-events", "Output Kafka topic for processed events")
+    // Create datasets for all input sources
+    SimpleOpenLineageClient.createDataset("input-events", "Generic input Kafka topic for data events")
+    SimpleOpenLineageClient.createDataset("db-events", "Database events from Debezium/JDBC connectors")
+    SimpleOpenLineageClient.createDataset("file-events", "File system events from File connectors")
+    SimpleOpenLineageClient.createDataset("api-events", "API/Web service events from HTTP connectors")
+    
+    // Output dataset
+    SimpleOpenLineageClient.createDataset("processed-events", "Unified output topic for all processed events")
+    
+    logger.info("Marquez datasets initialized for 4 source types")
   }
 }
