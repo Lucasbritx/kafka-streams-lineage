@@ -37,7 +37,7 @@ case class DatasetInfo(
 
 object SimpleOpenLineageClient extends LazyLogging {
   
-  private val marquezUrl = sys.env.getOrElse("MARQUEZ_URL", "http://localhost:5000")
+  private val marquezUrl = sys.env.getOrElse("MARQUEZ_URL", "http://localhost:5002")
   private val namespace = sys.env.getOrElse("OPENLINEAGE_NAMESPACE", "kafka-streams")
   private val mapper = new ObjectMapper()
   mapper.registerModule(DefaultScalaModule)
